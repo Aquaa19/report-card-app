@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 @layer base {
   body {
@@ -40,23 +39,23 @@
   /* Gradient Text Utility */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, theme('colors.primary.400') 0%, theme('colors.primary.600') 100%);
+    background-image: linear-gradient(135deg, #818CF8 0%, #4F46E5 100%);
   }
 
   /* Glowing Action Buttons */
   .glowing-btn {
-    background: linear-gradient(135deg, theme('colors.primary.400') 0%, theme('colors.primary.600') 100%);
-    box-shadow: 0 0 15px theme('colors.primary.glow');
+    background: linear-gradient(135deg, #818CF8 0%, #4F46E5 100%);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
   }
 
   /* Search & Form Input Glow Effects */
   .input-glow:focus-within {
-    box-shadow: 0 0 12px 2px theme('colors.secondary.glow');
+    box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.5);
   }
 
   /* Ask Gemini specific glow */
   .gemini-glow {
-    box-shadow: theme('boxShadow.glow-primary');
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
   }
 }
 
