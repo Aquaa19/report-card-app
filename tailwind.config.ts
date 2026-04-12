@@ -1,55 +1,55 @@
-import type { Config } from "tailwindcss";
-
-/** Stitch / landing_page_search design tokens (code.html) */
-const stitchColors = {
-  background: "#121223",
-  "on-background": "#e3e0f9",
-  surface: "#121223",
-  "on-surface": "#e3e0f9",
-  "on-surface-variant": "#c4c5d9",
-  "outline-variant": "#434656",
-  "surface-container-lowest": "#0c0c1d",
-  "surface-container-low": "#1a1a2b",
-  "surface-container": "#1e1e30",
-  "surface-container-high": "#28283b",
-  "surface-container-highest": "#333346",
-  primary: "#b8c3ff",
-  "primary-container": "#2e5bff",
-  "on-primary": "#002388",
-  "on-primary-container": "#efefff",
-  tertiary: "#00dbe7",
-  "tertiary-container": "#007980",
-  "on-tertiary-container": "#c0faff",
-  secondary: "#d8b9ff",
-  "secondary-container": "#6e06d0",
-  outline: "#8e90a2",
-  error: "#ffb4ab",
-} as const;
+import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  darkMode: "class",
+  darkMode: 'class',
   theme: {
     extend: {
-      colors: stitchColors,
+      colors: {
+        background: '#030014',
+        surface: '#0B0524',
+        surfaceHover: '#130B38',
+        primary: {
+          400: '#818CF8',
+          500: '#6366F1',
+          600: '#4F46E5',
+          glow: 'rgba(99, 102, 241, 0.5)'
+        },
+        secondary: {
+          400: '#C084FC',
+          500: '#A855F7',
+          600: '#9333EA',
+          glow: 'rgba(168, 85, 247, 0.5)'
+        },
+        text: {
+          primary: '#F8FAFC',
+          secondary: '#94A3B8',
+          muted: '#64748B'
+        },
+        border: {
+          light: 'rgba(255, 255, 255, 0.08)',
+          focus: 'rgba(99, 102, 241, 0.3)'
+        },
+        status: {
+          success: '#10B981',
+          warning: '#F59E0B',
+          error: '#EF4444'
+        }
+      },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "sans-serif"],
-        body: ["var(--font-inter)", "Inter", "sans-serif"],
-        headline: ["var(--font-jakarta)", "Plus Jakarta Sans", "sans-serif"],
-        label: ["var(--font-inter)", "Inter", "sans-serif"],
+        sans: ['Inter', 'sans-serif'],
       },
-      borderRadius: {
-        /** Matches template tailwind.config override */
-        stitch: "1rem",
-        "stitch-lg": "2rem",
-        "stitch-xl": "3rem",
-      },
+      boxShadow: {
+        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+        'glow-primary': '0 0 20px rgba(99, 102, 241, 0.3)',
+        'glow-secondary': '0 0 20px rgba(168, 85, 247, 0.3)',
+      }
     },
   },
   plugins: [],
-};
+}
 export default config;
