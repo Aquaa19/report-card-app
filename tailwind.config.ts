@@ -10,43 +10,80 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#030014',
-        surface: '#0B0524',
-        surfaceHover: '#130B38',
+        // Core background and surface tokens from Stitch HTML
+        background: '#121223',
+        surface: {
+          DEFAULT: '#121223',
+          dim: '#121223',
+          bright: '#38374a',
+          container: '#1e1e30',
+          'container-low': '#1a1a2b',
+          'container-high': '#28283b',
+          'container-highest': '#333346',
+        },
+        // Primary and Tertiary tokens for Luminescent Scholar
         primary: {
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          glow: 'rgba(99, 102, 241, 0.5)'
+          DEFAULT: '#b8c3ff',
+          container: '#2e5bff',
+          fixed: '#dde1ff',
+          'fixed-dim': '#b8c3ff',
+        },
+        tertiary: {
+          DEFAULT: '#00dbe7',
+          container: '#007980',
+          fixed: '#74f5ff',
         },
         secondary: {
-          400: '#C084FC',
-          500: '#A855F7',
-          600: '#9333EA',
-          glow: 'rgba(168, 85, 247, 0.5)'
+          DEFAULT: '#d8b9ff',
+          container: '#6e06d0',
         },
+        // Text and Interface colors
+        on: {
+          surface: '#e3e0f9',
+          'surface-variant': '#c4c5d9',
+          primary: '#002388',
+          'primary-container': '#efefff',
+          tertiary: '#00363a',
+          error: '#690005',
+        },
+        outline: {
+          DEFAULT: '#8e90a2',
+          variant: '#434656',
+        },
+        error: {
+          DEFAULT: '#ffb4ab',
+          container: '#93000a',
+        },
+        // Map old text tokens to new Stitch tokens for compatibility
         text: {
-          primary: '#F8FAFC',
-          secondary: '#94A3B8',
-          muted: '#64748B'
+          primary: '#e3e0f9',    // maps to on-surface
+          secondary: '#c4c5d9',  // maps to on-surface-variant
+          muted: '#8e90a2',      // maps to outline
         },
         border: {
           light: 'rgba(255, 255, 255, 0.08)',
-          focus: 'rgba(99, 102, 241, 0.3)'
+          focus: '#2e5bff',
         },
         status: {
-          success: '#10B981',
-          warning: '#F59E0B',
-          error: '#EF4444'
+          success: '#00dbe7',    // Using tertiary for success in this theme
+          warning: '#eddcff',
+          error: '#ffb4ab',
         }
       },
       fontFamily: {
+        headline: ['Plus Jakarta Sans', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
         sans: ['Inter', 'sans-serif'],
       },
+      borderRadius: {
+        DEFAULT: '1rem',
+        lg: '2rem',
+        xl: '3rem',
+      },
       boxShadow: {
-        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
-        'glow-primary': '0 0 20px rgba(99, 102, 241, 0.3)',
-        'glow-secondary': '0 0 20px rgba(168, 85, 247, 0.3)',
+        'glass': '0 4px 30px rgba(0, 0, 0, 0.2)',
+        'glow-primary': '0 0 20px rgba(46, 91, 255, 0.3)',
+        'glow-tertiary': '0 0 20px rgba(0, 219, 231, 0.3)',
       }
     },
   },
