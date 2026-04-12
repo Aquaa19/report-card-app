@@ -2,33 +2,39 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { DashboardRow } from "@/lib/types";
 
-function initials(name: string) {
+// Unified initials helper
+function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase() || "?";
+  return name.slice(0, 2).toUpperCase() || "ST";
 }
 
 export default function DashboardPage() {
+  // Unified State
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<DashboardRow[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<DashboardRow[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function runSearch() {
+  // Unified Search Handler
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
     const q = searchQuery.trim();
+    
     if (!q) {
       setError("Please enter a student name or ID.");
-      setResults(null);
+      setSearchResults(null);
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
-    setResults(null);
+    setSearchResults(null);
 
     try {
       const res = await fetch(
@@ -39,25 +45,32 @@ export default function DashboardPage() {
 
       if (!res.ok) {
         setError(json.message ?? "Search failed.");
-        setResults([]);
+        setSearchResults([]);
         return;
       }
 
-      setResults(json.data ?? []);
-    } catch {
+      setSearchResults(json.data ?? []);
+    } catch (err) {
       setError("Connection error. Please try again.");
-      setResults([]);
+      setSearchResults([]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  };
 
-  const showMockPreview = results === null;
-  const firstResult = results && results.length > 0 ? results[0] : null;
+  const showMockPreview = searchResults === null;
+  const firstResult = searchResults && searchResults.length > 0 ? searchResults[0] : null;
+
+  // Samim's insights data adapted to your Stitch theme colors
+  const insights = [
+    { icon: 'notifications_active', title: 'Alerts', desc: 'Generated 24 progress alerts this week across all batches.', color: 'text-primary' },
+    { icon: 'trending_up', title: 'Performance', desc: 'Average grade index increased by 4.2% since mid-term.', color: 'text-tertiary' },
+    { icon: 'inventory_2', title: 'Reports Ready', desc: 'All Grade 12-A finals are compiled and ready for review.', color: 'text-secondary' }
+  ];
 
   return (
-    <main className="pt-24 pb-20 px-6 flex flex-col items-center min-h-[calc(100vh-80px)] text-center">
-      {/* Greeting Section - Matching HTML Spacing & Tokens */}
+    <main className="pt-24 pb-20 px-6 flex flex-col items-center min-h-[calc(100vh-80px)] text-center animate-in fade-in duration-700">
+      {/* Greeting Section */}
       <header className="mb-12 space-y-3">
         <h1 className="text-5xl md:text-6xl font-bold font-headline tracking-tight text-on-surface">
           Welcome back,{" "}
@@ -70,17 +83,13 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      {/* Search Card Container - Max Width 3xl */}
+      {/* Search Card Container */}
       <div className="w-full max-w-3xl relative">
-        {/* Decorative Glow Background */}
         <div className="absolute -inset-4 bg-primary-container/20 blur-3xl rounded-full opacity-50 -z-10" />
         
         <form 
           className="glass-card p-8 md:p-12 rounded-lg border border-outline-variant/15 shadow-2xl flex flex-col md:flex-row gap-4 items-stretch md:items-center"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void runSearch();
-          }}
+          onSubmit={handleSearch}
         >
           <div className="relative flex-1 group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-tertiary transition-colors">
@@ -88,7 +97,7 @@ export default function DashboardPage() {
             </span>
             <input 
               className="w-full pl-12 pr-4 py-5 bg-surface-container-highest/40 border border-outline-variant/15 rounded-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-tertiary/20 focus:border-tertiary transition-all font-body text-lg" 
-              placeholder="Enter Student ID" 
+              placeholder="Enter Student Name or ID" 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -96,10 +105,11 @@ export default function DashboardPage() {
           </div>
           <button 
             type="submit"
-            disabled={loading}
-            className="px-10 py-5 glowing-btn text-on-primary font-headline font-bold rounded-full transition-all active:scale-95 disabled:opacity-60"
+            disabled={isLoading}
+            className="px-10 py-5 glowing-btn text-on-primary font-headline font-bold rounded-full transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {loading ? "Searching..." : "Search"}
+            {isLoading ? <span className="material-symbols-outlined animate-spin">sync</span> : null}
+            {isLoading ? "Searching..." : "Search"}
           </button>
         </form>
 
@@ -126,7 +136,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-inner">
                 <span className="text-xl font-bold text-primary font-headline">
-                  {showMockPreview ? "JD" : initials(firstResult?.studentName || "")}
+                  {showMockPreview ? "JD" : getInitials(firstResult?.studentName || "")}
                 </span>
               </div>
               <div className="text-left">
@@ -139,10 +149,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-3">
+            <div className="flex flex-col items-end gap-3 mt-4 sm:mt-0">
               <span className="px-4 py-1.5 rounded-full bg-tertiary-container/20 text-tertiary border border-tertiary/20 text-xs font-bold font-label flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
-                Excellent
+                {showMockPreview ? "Excellent" : firstResult?.status || "Average"}
               </span>
               <div className="flex gap-1 text-on-surface-variant group-hover:text-primary transition-colors">
                 <span className="material-symbols-outlined text-lg">visibility</span>
@@ -152,18 +162,16 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {!showMockPreview && results?.length === 0 && !loading && (
-          <p className="text-on-surface-variant text-sm italic">No students found matching &quot;{searchQuery}&quot;</p>
+        {!showMockPreview && searchResults?.length === 0 && !isLoading && (
+          <div className="bg-surface-container-low glass-card p-8 rounded-lg border border-outline-variant/10 text-center">
+             <p className="text-on-surface-variant text-sm italic">No students found matching &quot;{searchQuery}&quot;</p>
+          </div>
         )}
       </div>
 
       {/* Quick Stats Bento */}
       <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-        {[
-          { icon: 'auto_awesome', title: 'AI Insights', desc: 'Generated 24 progress alerts this morning.', color: 'text-primary' },
-          { icon: 'trending_up', title: 'Performance', desc: 'Average grade index increased by 4.2%.', color: 'text-tertiary' },
-          { icon: 'history_edu', title: 'Reports Ready', desc: 'All Grade 12-A finals are now compiled.', color: 'text-secondary' }
-        ].map((item, idx) => (
+        {insights.map((item, idx) => (
           <div key={idx} className="bg-surface-container-low glass-card p-6 rounded-lg border border-outline-variant/10 text-left hover:border-primary/20 transition-all group">
             <div className={`w-10 h-10 rounded-full bg-surface-container flex items-center justify-center mb-4 border border-outline-variant/10 group-hover:scale-110 transition-transform ${item.color}`}>
               <span className="material-symbols-outlined">{item.icon}</span>
