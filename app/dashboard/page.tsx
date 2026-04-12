@@ -1,262 +1,200 @@
 "use client";
-
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { DashboardRow } from "@/lib/parse-responses";
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase() || "?";
-}
-
-function statusPill(status: string) {
-  const s = status.toLowerCase();
-  if (s.includes("excellent") || s.includes("good")) {
-    return {
-      label: status || "Excellent",
-      className: "border border-tertiary/20 bg-tertiary-container/20 text-tertiary",
-    };
-  }
-  return {
-    label: status || "Status",
-    className:
-      "border border-outline-variant/20 bg-surface-container-high/40 text-on-surface-variant",
-  };
-}
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<DashboardRow[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<DashboardRow[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const router = useRouter();
 
-  async function runSearch() {
-    const q = searchQuery.trim();
-    if (!q) {
-      setError("Enter a student name or ID.");
-      setResults(null);
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      setHasSearched(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setResults(null);
-
+    setIsLoading(true);
+    setHasSearched(true);
+    
     try {
-      const res = await fetch(
-        `/api/student-history?name=${encodeURIComponent(q)}`,
-        { cache: "no-store" }
-      );
-      const json = (await res.json()) as {
-        success?: boolean;
-        data?: DashboardRow[];
-        message?: string;
-      };
-
-      if (!res.ok) {
-        setError(json.message ?? "Search failed.");
-        setResults([]);
-        return;
+      const response = await fetch("/api/students");
+      const resData = await response.json();
+      
+      if (resData.success) {
+        const query = searchQuery.toLowerCase().trim();
+        const matches = resData.data.filter((student: DashboardRow) =>
+          student.studentName.toLowerCase().includes(query)
+        );
+        setSearchResults(matches);
+      } else {
+        setSearchResults([]);
       }
-
-      setResults(json.data ?? []);
-    } catch {
-      setError("Could not reach the server. Try again.");
-      setResults([]);
+    } catch (error) {
+      console.error("Failed to search students", error);
+      setSearchResults([]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  };
 
-  const showMockPreview = results === null;
-  const first = results && results.length > 0 ? results[0]! : null;
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "ST";
+  };
+
+  const insights = [
+    {
+      icon: "notifications_active",
+      label: "Alerts",
+      iconColor: "text-blue-600 dark:text-[#b8c3ff]",
+      value: "24 Progress Alerts",
+      description: "Generated this week across all batches.",
+    },
+    {
+      icon: "trending_up",
+      label: "Performance",
+      iconColor: "text-[#007980] dark:text-[#00dbe7]",
+      value: "+4.2% Grade Index",
+      description: "Average grade index increased since the mid-term.",
+    },
+    {
+      icon: "inventory_2",
+      label: "Reports Ready",
+      iconColor: "text-indigo-600 dark:text-[#d8b9ff]",
+      value: "Class 10 Finals",
+      description: "All reports are compiled and ready for review.",
+    },
+  ];
 
   return (
-    <main className="flex min-h-screen flex-col items-center px-6 pb-20 text-center">
-      <header className="mb-12 space-y-3">
-        <h1 className="font-headline text-5xl font-bold tracking-tight text-on-surface md:text-6xl">
-          Welcome back,{" "}
-          <span className="bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">
-            Teacher 👋
-          </span>
-        </h1>
-        <p className="font-body text-lg font-medium text-on-surface-variant">
-          Search a student to view their performance report
-        </p>
-      </header>
-
-      <div id="student-search" className="relative w-full max-w-3xl scroll-mt-36">
-        <div className="absolute -inset-4 -z-10 rounded-full bg-primary-container/20 opacity-50 blur-3xl" />
-        <form
-          className="glass-card flex flex-col items-stretch gap-4 rounded-stitch-lg border border-outline-variant/15 p-8 shadow-2xl md:flex-row md:items-center md:p-12"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void runSearch();
-          }}
-        >
-          <div className="group relative flex-1">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-tertiary">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Enter Student ID"
-              className="font-body w-full rounded-md border border-outline-variant/15 bg-surface-container-highest/40 py-5 pl-12 pr-4 text-lg text-on-surface placeholder:text-on-surface-variant/50 transition-all focus:border-tertiary focus:outline-none focus:ring-2 focus:ring-tertiary/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Student search"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="font-headline rounded-full bg-gradient-to-br from-primary to-primary-container px-10 py-5 font-bold text-on-primary shadow-[0_0_20px_rgba(46,91,255,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(46,91,255,0.5)] active:scale-95 disabled:opacity-60"
-          >
-            {loading ? "Searching…" : "Search"}
-          </button>
-        </form>
-
-        {error ? (
-          <p className="mt-4 text-sm text-error" role="alert">
-            {error}
+    <div className="w-full min-h-full p-6 md:p-12 flex flex-col transition-colors duration-500">
+      <div className="w-full max-w-4xl mx-auto flex flex-col flex-1 pb-12">
+        {/* ── HERO ─────────────────────────────────────────── */}
+        <div className="text-center space-y-3 mb-10 w-full mt-4">
+          <h1 className="text-[40px] md:text-[54px] font-bold text-slate-900 dark:text-white tracking-tight leading-tight transition-colors duration-500">
+            Welcome back,{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-cyan-400 dark:to-blue-500 transition-colors duration-500">
+              Teacher
+            </span>{" "}
+            <span className="inline-block">👋</span>
+          </h1>
+          <p className="text-slate-500 dark:text-[#c4c5d9] text-base md:text-[17px] transition-colors duration-500">
+            Search a student to view their performance report
           </p>
-        ) : null}
-      </div>
-
-      <div className="mt-16 w-full max-w-2xl">
-        <div className="mb-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
-          <span className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Search Result
-          </span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
         </div>
 
-        {showMockPreview ? (
-          <div className="bg-surface-container-low glass-card group flex cursor-pointer items-center justify-between rounded-stitch-lg border border-outline-variant/10 p-6 transition-all hover:border-primary/30">
-            <div className="flex items-center gap-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-outline-variant/20 bg-gradient-to-br from-surface-container-high to-surface-container-highest shadow-inner">
-                <span className="font-headline text-xl font-bold text-primary">JD</span>
-              </div>
-              <div className="text-left">
-                <h3 className="font-headline text-xl font-semibold text-on-surface">
-                  Jane Doe
-                </h3>
-                <p className="font-body text-sm font-medium text-on-surface-variant">
-                  Batch: Grade 12-A
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-3">
-              <span className="font-label flex items-center gap-2 rounded-full border border-tertiary/20 bg-tertiary-container/20 px-4 py-1.5 text-xs font-bold text-tertiary">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-tertiary" />
-                Excellent
+        {/* ── SEARCH BAR CONTAINER ────────────────────────── */}
+        <div className="w-full bg-white dark:bg-[#1a1a2b] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-200 dark:border-transparent rounded-[24px] p-6 md:p-10 mb-12 flex flex-col transition-all duration-500">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 w-full">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#8e90a2] pointer-events-none text-[22px] transition-colors duration-500">
+                search
               </span>
-              <div className="flex items-center gap-1 text-on-surface-variant">
-                <span className="material-symbols-outlined text-lg">visibility</span>
-                <span className="font-label text-xs font-bold uppercase tracking-tighter">
-                  View Full Report
-                </span>
-              </div>
+              <input
+                id="student-search-input"
+                type="text"
+                placeholder="Enter Student Name"
+                className="w-full bg-slate-50 dark:bg-[#28283b] border border-slate-200 dark:border-transparent rounded-xl py-4 pl-12 pr-4 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#8e90a2] focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#b8c3ff]/50 transition-all duration-500 font-medium shadow-inner dark:shadow-none"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+              />
             </div>
-          </div>
-        ) : null}
+            <button
+              id="student-search-btn"
+              type="submit"
+              disabled={isLoading}
+              className="px-10 py-4 rounded-xl font-semibold text-[15px] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:scale-100 text-white shadow-lg shadow-blue-500/30 dark:shadow-[0_4px_20px_rgba(46,91,255,0.25)] bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-[#7b8bff] dark:to-[#2e5bff]"
+            >
+              {isLoading ? (
+                  <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
+              ) : null}
+              {isLoading ? "Searching..." : "Search"}
+            </button>
+          </form>
+        </div>
 
-        {!showMockPreview && results && results.length === 0 && !loading ? (
-          <p className="text-on-surface-variant text-sm">
-            No students matched &ldquo;{searchQuery.trim()}&rdquo;.
-          </p>
-        ) : null}
-
-        {!showMockPreview && first ? (
-          <div className="bg-surface-container-low glass-card group flex cursor-pointer items-center justify-between rounded-stitch-lg border border-outline-variant/10 p-6 transition-all hover:border-primary/30">
-            <div className="flex items-center gap-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-outline-variant/20 bg-gradient-to-br from-surface-container-high to-surface-container-highest shadow-inner">
-                <span className="font-headline text-xl font-bold text-primary">
-                  {initials(first.studentName)}
-                </span>
-              </div>
-              <div className="text-left">
-                <h3 className="font-headline text-xl font-semibold text-on-surface">
-                  {first.studentName}
-                </h3>
-                <p className="font-body text-sm font-medium text-on-surface-variant">
-                  Batch: {first.batch}
-                </p>
-              </div>
+        {/* ── SEARCH RESULT DIVIDER ───────────────────────── */}
+        {(hasSearched || searchResults !== null) && (
+          <>
+            <div className="w-full flex items-center justify-center mb-8 relative animate-in fade-in duration-500">
+              <div className="absolute left-0 right-0 h-[1px] bg-slate-200 dark:bg-[#28283b] top-1/2 -translate-y-1/2 z-0 transition-colors duration-500"></div>
+              <span className="bg-[#f8fafc] dark:bg-[#121223] px-4 text-slate-400 dark:text-[#8e90a2] text-xs font-bold tracking-widest uppercase z-10 transition-colors duration-500">
+                Search Result
+              </span>
             </div>
-            <div className="flex flex-col items-end gap-3">
-              {(() => {
-                const pill = statusPill(first.status);
-                return (
-                  <span
-                    className={`font-label flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold ${pill.className}`}
-                  >
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-tertiary" />
-                    {pill.label}
-                  </span>
-                );
-              })()}
-              <div className="flex items-center gap-1 text-on-surface-variant">
-                <span className="material-symbols-outlined text-lg">visibility</span>
-                <span className="font-label text-xs font-bold uppercase tracking-tighter">
-                  View Full Report
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : null}
 
-        {!showMockPreview && results && results.length > 1 ? (
-          <ul className="mt-6 space-y-3 text-left">
-            {results.slice(1).map((row) => (
-              <li
-                key={`${row.studentName}-${row.batch}`}
-                className="bg-surface-container-low glass-card rounded-stitch-lg border border-outline-variant/10 p-4"
+            {/* ── SEARCH RESULT CARDS ──────────────────────────── */}
+            <div className="mb-16 space-y-4 animate-in fade-in duration-500">
+              {searchResults && searchResults.length > 0 ? (
+                searchResults.map((student, idx) => (
+                  <div key={idx} className="w-full bg-white dark:bg-[#1a1a2b] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none rounded-[20px] p-5 flex flex-col sm:flex-row items-center justify-between border border-slate-200 dark:border-[#28283b] hover:border-blue-200 dark:hover:border-[#434656] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500">
+                    <div className="flex items-center gap-4">
+                      <div className="w-[52px] h-[52px] rounded-full bg-blue-50 dark:bg-[#28283b] flex items-center justify-center text-blue-600 dark:text-[#c4c5d9] font-bold text-lg transition-colors duration-500 border border-blue-100 dark:border-none">
+                        {getInitials(student.studentName)}
+                      </div>
+                      <div>
+                        <h3 className="text-slate-900 dark:text-white font-semibold text-lg transition-colors duration-500">{student.studentName}</h3>
+                        <p className="text-slate-500 dark:text-[#8e90a2] text-sm transition-colors duration-500">Batch: {student.batch}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-3 mt-4 sm:mt-0">
+                      <div className={`flex items-center gap-2 pb-0.5 pt-0.5 px-3 rounded-full border text-xs font-medium transition-colors duration-500
+                        ${student.status.toLowerCase().includes('excellent') || student.status.toLowerCase().includes('good') ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-[#007980]/20 dark:border-[#007980]/30 dark:text-[#00dbe7]' : 
+                          student.status.toLowerCase().includes('warning') || student.status.toLowerCase().includes('poor') ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400' : 
+                          'bg-amber-50 border-amber-200 text-amber-600 dark:bg-yellow-500/10 dark:border-yellow-500/30 dark:text-yellow-400'}`
+                      }>
+                        <span className={`w-1.5 h-1.5 rounded-full ${student.status.toLowerCase().includes('excellent') || student.status.toLowerCase().includes('good') ? 'bg-emerald-500 dark:bg-[#00dbe7]' : student.status.toLowerCase().includes('warning') || student.status.toLowerCase().includes('poor') ? 'bg-red-500 dark:bg-red-400' : 'bg-amber-500 dark:bg-yellow-400'}`}></span>
+                        {student.status || 'Average'}
+                      </div>
+                      <Link href={`/dashboard/${encodeURIComponent(student.studentName)}`} className="flex items-center gap-1.5 text-slate-500 dark:text-[#c4c5d9] hover:text-blue-600 dark:hover:text-white transition-colors duration-300 text-xs font-semibold tracking-wide">
+                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                        VIEW FULL REPORT
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="w-full bg-white dark:bg-[#1a1a2b] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none rounded-[20px] p-8 text-center border border-slate-200 dark:border-[#28283b] transition-all duration-500">
+                  <p className="text-slate-500 dark:text-[#8e90a2] transition-colors duration-500">No students found matching "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── INSIGHT CARDS ───────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {insights.map((card) => (
+            <div
+              key={card.label}
+              className="bg-white dark:bg-[#1a1a2b] shadow-sm hover:shadow-md dark:shadow-none rounded-[20px] p-6 flex flex-col gap-3 border border-slate-200 dark:border-transparent hover:border-slate-300 dark:hover:border-[#28283b] transition-all duration-500"
+            >
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center mb-1 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-transparent transition-colors duration-500"
               >
-                <span className="font-headline font-semibold text-on-surface">
-                  {row.studentName}
+                <span className={`material-symbols-outlined text-[20px] ${card.iconColor} drop-shadow-sm transition-colors duration-500`}>
+                  {card.icon}
                 </span>
-                <span className="ml-2 text-sm text-on-surface-variant">
-                  {row.batch} · {row.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-
-      <div className="mt-20 grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="bg-surface-container-low glass-card rounded-stitch-lg border border-outline-variant/10 p-6 text-left">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <span className="material-symbols-outlined text-primary">auto_awesome</span>
-          </div>
-          <h4 className="mb-1 font-semibold text-on-surface">AI Insights</h4>
-          <p className="text-sm leading-relaxed text-on-surface-variant">
-            Generated 24 progress alerts this morning across all batches.
-          </p>
-        </div>
-        <div className="bg-surface-container-low glass-card rounded-stitch-lg border border-outline-variant/10 p-6 text-left">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-tertiary/10">
-            <span className="material-symbols-outlined text-tertiary">trending_up</span>
-          </div>
-          <h4 className="mb-1 font-semibold text-on-surface">Performance</h4>
-          <p className="text-sm leading-relaxed text-on-surface-variant">
-            Average grade index increased by 4.2% since the mid-term.
-          </p>
-        </div>
-        <div className="bg-surface-container-low glass-card rounded-stitch-lg border border-outline-variant/10 p-6 text-left">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
-            <span className="material-symbols-outlined text-secondary">history_edu</span>
-          </div>
-          <h4 className="mb-1 font-semibold text-on-surface">Reports Ready</h4>
-          <p className="text-sm leading-relaxed text-on-surface-variant">
-            All Grade 12-A finals are now compiled and ready for review.
-          </p>
+              </div>
+              <h4 className="text-slate-900 dark:text-white font-bold text-[15px] transition-colors duration-500">{card.label}</h4>
+              <p className="text-slate-500 dark:text-[#8e90a2] text-[13px] leading-relaxed transition-colors duration-500">
+                {card.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
