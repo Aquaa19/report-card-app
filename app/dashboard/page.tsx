@@ -2,8 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { DashboardRow } from "@/lib/types";
+
+const Link = ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+  <a href={href} className={className}>{children}</a>
+);
 
 // Unified initials helper
 function getInitials(name: string) {
@@ -58,7 +61,6 @@ export default function DashboardPage() {
     }
   };
 
-  const showMockPreview = searchResults === null;
   const firstResult = searchResults && searchResults.length > 0 ? searchResults[0] : null;
 
   // Samim's insights data adapted to your Stitch theme colors
@@ -120,54 +122,59 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Result Preview Section */}
-      <div className="mt-16 w-full max-w-2xl">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
-          <span className="text-on-surface-variant text-xs font-bold uppercase tracking-widest font-label">
-            Search Result
-          </span>
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
+      {/* Result Preview Section - Hidden by default until searchResults is populated */}
+      {searchResults !== null && (
+        <div className="mt-16 w-full max-w-2xl animate-in slide-in-from-bottom-4 fade-in duration-500">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
+            <span className="text-on-surface-variant text-xs font-bold uppercase tracking-widest font-label">
+              Search Result
+            </span>
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent" />
+          </div>
+
+          {/* Individual Student Preview Card */}
+          {firstResult && (
+            <Link href={`/dashboard/${encodeURIComponent(firstResult.studentName)}`} className="block">
+              <div className="bg-surface-container-low glass-card p-6 rounded-lg border border-outline-variant/10 flex items-center justify-between group hover:border-primary/30 transition-all cursor-pointer">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-inner">
+                    <span className="text-xl font-bold text-primary font-headline">
+                      {getInitials(firstResult.studentName)}
+                    </span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xl font-semibold text-on-surface font-headline">
+                      {firstResult.studentName}
+                    </h3>
+                    <p className="text-on-surface-variant text-sm font-medium">
+                      Batch: {firstResult.batch}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-3 mt-4 sm:mt-0">
+                  <span className="px-4 py-1.5 rounded-full bg-tertiary-container/20 text-tertiary border border-tertiary/20 text-xs font-bold font-label flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                    {firstResult.status || "Average"}
+                  </span>
+                  <div className="flex gap-1 text-on-surface-variant group-hover:text-primary transition-colors">
+                    <span className="material-symbols-outlined text-lg">visibility</span>
+                    <span className="text-xs font-bold font-label uppercase tracking-tighter">View Full Report</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {/* Empty state if search returns nothing */}
+          {searchResults.length === 0 && !isLoading && (
+            <div className="bg-surface-container-low glass-card p-8 rounded-lg border border-outline-variant/10 text-center">
+               <p className="text-on-surface-variant text-sm italic">No students found matching &quot;{searchQuery}&quot;</p>
+            </div>
+          )}
         </div>
-
-        {/* Individual Student Preview Card */}
-        {(showMockPreview || firstResult) && (
-          <div className="bg-surface-container-low glass-card p-6 rounded-lg border border-outline-variant/10 flex items-center justify-between group hover:border-primary/30 transition-all cursor-pointer">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-inner">
-                <span className="text-xl font-bold text-primary font-headline">
-                  {showMockPreview ? "JD" : getInitials(firstResult?.studentName || "")}
-                </span>
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-semibold text-on-surface font-headline">
-                  {showMockPreview ? "Jane Doe" : firstResult?.studentName}
-                </h3>
-                <p className="text-on-surface-variant text-sm font-medium">
-                  Batch: {showMockPreview ? "Grade 12-A" : firstResult?.batch}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-3 mt-4 sm:mt-0">
-              <span className="px-4 py-1.5 rounded-full bg-tertiary-container/20 text-tertiary border border-tertiary/20 text-xs font-bold font-label flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
-                {showMockPreview ? "Excellent" : firstResult?.status || "Average"}
-              </span>
-              <div className="flex gap-1 text-on-surface-variant group-hover:text-primary transition-colors">
-                <span className="material-symbols-outlined text-lg">visibility</span>
-                <span className="text-xs font-bold font-label uppercase tracking-tighter">View Full Report</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!showMockPreview && searchResults?.length === 0 && !isLoading && (
-          <div className="bg-surface-container-low glass-card p-8 rounded-lg border border-outline-variant/10 text-center">
-             <p className="text-on-surface-variant text-sm italic">No students found matching &quot;{searchQuery}&quot;</p>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Quick Stats Bento */}
       <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">

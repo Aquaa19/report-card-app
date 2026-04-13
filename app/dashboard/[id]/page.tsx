@@ -1,6 +1,11 @@
+// File: app/dashboard/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+
+const Link = ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+  <a href={href} className={className}>{children}</a>
+);
 
 interface StudentHistory {
   studentName: string;
@@ -14,12 +19,12 @@ interface StudentHistory {
 }
 
 export default function StudentReportPage() {
-  // Mock ID for the preview environment, normally fetched via useParams()
   const studentId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() || 'JD-123' : 'JD-123'; 
   
   const [data, setData] = useState<StudentHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     async function fetchStudentDetails() {
@@ -43,6 +48,31 @@ export default function StudentReportPage() {
     fetchStudentDetails();
   }, [studentId]);
 
+  const handleGenerateReport = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: decodeURIComponent(studentId) })
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        // Since Arko will build the actual PDF, we just simulate success here
+        alert("Backend Success! JSON payload ready for Arko's PDF renderer.\nCheck console for data.");
+        console.log("PDF Export Data:", json.data);
+      } else {
+        alert("Failed to generate report: " + json.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while generating the report.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-full min-h-[60vh] space-y-4">
       <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
@@ -51,23 +81,38 @@ export default function StudentReportPage() {
   );
 
   if (error || !data) return (
-    <div className="p-20 text-center space-y-6">
+    <div className="p-20 text-center space-y-6 pt-28">
       <span className="material-symbols-outlined text-6xl text-red-500/50">person_off</span>
       <h2 className="text-2xl font-bold text-white">Student Record Not Found</h2>
-      <link href="/dashboard" className="text-cyan-400 underline block font-bold">Return to Search</link>
+      <Link href="/dashboard" className="text-cyan-400 underline block font-bold">Return to Search</Link>
     </div>
   );
 
   return (
-    <div className="p-8 md:p-12 max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <div className="pt-24 pb-8 px-8 md:pt-28 md:pb-12 md:px-12 max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <link href="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-cyan-400 transition-all group">
+        <Link href="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-cyan-400 transition-all group">
           <span className="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Exit to Dashboard</span>
-        </link>
-        <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-          Student ID: {studentId.toUpperCase()}
+        </Link>
+        
+        <div className="flex items-center gap-4">
+          <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-slate-400 tracking-widest uppercase hidden md:block">
+            Student ID: {studentId.toUpperCase()}
+          </div>
+          <button 
+            onClick={handleGenerateReport}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-6 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-400 border border-cyan-500/30 text-xs font-bold uppercase tracking-widest rounded-full transition-all disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+            ) : (
+              <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+            )}
+            {isGenerating ? "Exporting..." : "Generate Report"}
+          </button>
         </div>
       </div>
 
