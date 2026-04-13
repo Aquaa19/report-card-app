@@ -135,7 +135,7 @@ export default function DashboardPage() {
 
           {/* Individual Student Preview Card */}
           {firstResult && (
-            <Link href={`/dashboard/${encodeURIComponent(firstResult.studentName)}`} className="block">
+            <Link href={`/dashboard/${btoa(firstResult.studentName)}`} className="block">
               <div className="bg-surface-container-low glass-card p-6 rounded-lg border border-outline-variant/10 flex items-center justify-between group hover:border-primary/30 transition-all cursor-pointer">
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-inner">

@@ -19,18 +19,39 @@ interface StudentHistory {
 }
 
 export default function StudentReportPage() {
-  const studentId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() || 'JD-123' : 'JD-123'; 
-  
+  // Safely grab the URL parameter and decode it from Base64
+  const [decodedName, setDecodedName] = useState('');
+  const [displayId, setDisplayId] = useState('');
+
   const [data, setData] = useState<StudentHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 1. First, decode the Base64 URL when the page loads
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const rawId = window.location.pathname.split('/').pop() || '';
+      setDisplayId(rawId); // Keep the scrambled string for the Ref ID pill
+      
+      try {
+        // Decode the Base64 string back to the real name (e.g., QXJrYQ== -> Arka)
+        setDecodedName(atob(decodeURIComponent(rawId)));
+      } catch (e) {
+        // Fallback just in case it wasn't encoded properly
+        setDecodedName(decodeURIComponent(rawId));
+      }
+    }
+  }, []);
+
+  // 2. Then, use the decoded name to fetch the data from your API
   useEffect(() => {
     async function fetchStudentDetails() {
+      if (!decodedName) return; 
+      
       try {
         setLoading(true);
-        const res = await fetch(`/api/student-history?name=${decodeURIComponent(studentId)}`);
+        const res = await fetch(`/api/student-history?name=${encodeURIComponent(decodedName)}`);
         const json = await res.json();
         
         if (json.success && json.data.length > 0) {
@@ -46,7 +67,7 @@ export default function StudentReportPage() {
       }
     }
     fetchStudentDetails();
-  }, [studentId]);
+  }, [decodedName]);
 
   const handleGenerateReport = async () => {
     try {
@@ -54,12 +75,11 @@ export default function StudentReportPage() {
       const res = await fetch('/api/export-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: decodeURIComponent(studentId) })
+        body: JSON.stringify({ name: decodedName })
       });
       const json = await res.json();
       
       if (json.success) {
-        // Since Arko will build the actual PDF, we just simulate success here
         alert("Backend Success! JSON payload ready for Arko's PDF renderer.\nCheck console for data.");
         console.log("PDF Export Data:", json.data);
       } else {
@@ -99,7 +119,7 @@ export default function StudentReportPage() {
         
         <div className="flex items-center gap-4">
           <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-slate-400 tracking-widest uppercase hidden md:block">
-            Student ID: {studentId.toUpperCase()}
+            Ref ID: {displayId.slice(0, 8).toUpperCase()}
           </div>
           <button 
             onClick={handleGenerateReport}
