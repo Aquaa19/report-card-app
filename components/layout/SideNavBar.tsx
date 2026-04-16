@@ -17,7 +17,7 @@ export default function SideNavBar() {
 
   const navItems = [
     { name: 'Overview', href: '/dashboard', icon: 'dashboard' },
-    { name: 'Ask Gemini', href: '/ask-gemini', icon: 'auto_awesome' },
+    { name: 'Ask Gemini', href: '/dashboard/ask-gemini', icon: 'auto_awesome' },
     { name: 'Grade Trends', href: '/dashboard/trends', icon: 'trending_up' },
     { name: 'Class Performance', href: '/dashboard/performance', icon: 'groups' },
     { name: 'Attendance', href: '/dashboard/attendance', icon: 'calendar_today' },
