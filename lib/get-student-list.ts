@@ -1,11 +1,9 @@
-// file: lib/get-student-list
+// file: lib/get-student-list.ts
 
 import { sheets } from "@/lib/google-sheets";
-import { parseDashboardData, type DashboardRow } from "@/lib/parse-responses";
+import { parseFormResponses, calculateDashboardMetrics } from "@/lib/parse-responses";
+import type { DashboardRow } from "@/lib/types";
 
-/**
- * Loads rows from the Performance Dashboard sheet (same range as /api/dashboard).
- */
 export async function getStudentList(): Promise<DashboardRow[]> {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
   if (!spreadsheetId) {
@@ -22,5 +20,6 @@ export async function getStudentList(): Promise<DashboardRow[]> {
     return [];
   }
 
-  return parseDashboardData(rows);
+  const parsedResponses = parseFormResponses(rows);
+  return calculateDashboardMetrics(parsedResponses);
 }
