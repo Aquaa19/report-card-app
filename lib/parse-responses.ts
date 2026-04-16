@@ -1,10 +1,9 @@
 // File: lib/parse-responses.ts
 
-// Import the centralized types instead of duplicating them
 import { FormResponse, DashboardRow } from './types';
 
 /**
- * Normalizes the raw 2D array from 'Form responses' sheet into typed objects.
+ * Normalizes the raw 2D array from 'Form responses 1' sheet into typed objects.
  * Assumes the first row (index 0) contains headers and skips it.
  */
 export function parseFormResponses(rows: string[][]): FormResponse[] {
@@ -14,8 +13,8 @@ export function parseFormResponses(rows: string[][]): FormResponse[] {
 
   return dataRows.map((row) => ({
     timestamp: row[0] || '',
-    studentName: row[1] || '',
-    batch: row[2] || '',
+    studentName: (row[1] || '').trim(),
+    batch: (row[2] || '').trim(),
     date: row[3] || '',
     studyDays: parseInt(row[4], 10) || 0,
     avgStudyHours: parseFloat(row[5]) || 0,
@@ -24,32 +23,70 @@ export function parseFormResponses(rows: string[][]): FormResponse[] {
     difficultTopic: row[8] || '',
     douts: row[9] || '',
     // Convert 'Yes'/'No' strings to actual booleans
-    attendedTest: String(row[10]).toLowerCase() === 'yes',
+    attendedTest: String(row[10]).toLowerCase().trim() === 'yes',
     // Handle empty test scores safely
-    testScore: row[11] ? parseFloat(row[11]) : null,
+    testScore: row[11] && !isNaN(parseFloat(row[11])) ? parseFloat(row[11]) : null,
     satisfaction: row[12] || '',
     improvementPlan: row[13] || '',
   }));
 }
 
 /**
- * Normalizes the raw 2D array from 'Performance Dashboard' sheet.
- * Matches: Name(0), Latest(1), Previous(2), Improvement(3), Days(4), Hours(5), WeakTopic(6), Status(7)
+ * Calculates dashboard metrics from raw form responses.
+ * Groups responses by student and computes their latest stats.
  */
-export function parseDashboardData(rows: string[][]): DashboardRow[] {
-  if (!rows || rows.length <= 1) return [];
+export function calculateDashboardMetrics(responses: FormResponse[]): DashboardRow[] {
+  const studentMap = new Map<string, FormResponse[]>();
 
-  const dataRows = rows.slice(1);
+  // Group by student name
+  responses.forEach(res => {
+    if (!res.studentName) return;
+    const existing = studentMap.get(res.studentName) || [];
+    existing.push(res);
+    studentMap.set(res.studentName, existing);
+  });
 
-  return dataRows.map((row) => ({
-    studentName: row[0] || '',
-    latestScore: parseFloat(row[1]) || 0,
-    previousScore: parseFloat(row[2]) || 0,
-    scoreImprovement: parseFloat(row[3]) || 0,
-    avgStudyDays: parseFloat(row[4]) || 0,
-    avgStudyHours: parseFloat(row[5]) || 0,
-    weakTopic: row[6] || '',
-    status: row[7] || '',
-    batch: 'Standard', // Fallback since it was removed from the sheet columns
-  }));
+  const dashboardRows: DashboardRow[] = [];
+
+  studentMap.forEach((studentResponses, name) => {
+    // Sort chronologically by timestamp
+    const sortedResponses = studentResponses.sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    
+    const latestResponse = sortedResponses[sortedResponses.length - 1];
+    
+    // Find last two test scores to calculate improvement
+    const testsAttended = sortedResponses.filter(r => r.attendedTest && r.testScore !== null);
+    const latestScore = testsAttended.length > 0 ? testsAttended[testsAttended.length - 1].testScore! : 0;
+    const previousScore = testsAttended.length > 1 ? testsAttended[testsAttended.length - 2].testScore! : latestScore;
+    
+    const scoreImprovement = latestScore - previousScore;
+
+    // Averages
+    const totalDays = sortedResponses.reduce((sum, r) => sum + r.studyDays, 0);
+    const totalHours = sortedResponses.reduce((sum, r) => sum + r.avgStudyHours, 0);
+    const avgStudyDays = parseFloat((totalDays / sortedResponses.length).toFixed(1));
+    const avgStudyHours = parseFloat((totalHours / sortedResponses.length).toFixed(1));
+
+    // Status logic based on the latest score
+    let status = "Average";
+    if (latestScore >= 85) status = "Excellent";
+    else if (latestScore >= 70) status = "Good";
+    else if (latestScore < 50) status = "Needs Attention";
+
+    dashboardRows.push({
+      studentName: name,
+      latestScore,
+      previousScore,
+      scoreImprovement,
+      avgStudyDays,
+      avgStudyHours,
+      weakTopic: latestResponse.difficultTopic || 'None',
+      status,
+      batch: latestResponse.batch || 'Standard'
+    });
+  });
+
+  return dashboardRows;
 }

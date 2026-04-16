@@ -1,3 +1,4 @@
+//file : app/dashboard/reports/page.tsx
 export default function ReportsPage() {
   return (
     <div className="p-12 text-center text-slate-400">

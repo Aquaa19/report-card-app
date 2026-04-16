@@ -1,3 +1,5 @@
+//file: app/api/students/route.ts
+
 import { NextResponse } from "next/server";
 import { getStudentList } from '@/lib/get-student-list';
 

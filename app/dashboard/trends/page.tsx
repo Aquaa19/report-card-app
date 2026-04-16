@@ -1,3 +1,5 @@
+// file: app/dasboard/trends/page.tsx
+
 export default function GradeTrendsPage() {
   return (
     <div className="p-12 text-center text-slate-400">

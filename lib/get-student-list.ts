@@ -1,3 +1,5 @@
+// file: lib/get-student-list
+
 import { sheets } from "@/lib/google-sheets";
 import { parseDashboardData, type DashboardRow } from "@/lib/parse-responses";
 
@@ -12,7 +14,7 @@ export async function getStudentList(): Promise<DashboardRow[]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Performance Dashboard!A:H",
+    range: "Form responses 1!A:N",
   });
 
   const rows = response.data.values;
