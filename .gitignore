@@ -42,3 +42,5 @@ next-env.d.ts
 
 .cursorrules
 list.text
+model.mjs
+model.js
